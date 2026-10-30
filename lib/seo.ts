@@ -21,13 +21,15 @@ export function structuredData(locale: Locale) {
   const url = absoluteUrl(localePath(locale));
   const website = absoluteUrl('/#website');
   const software = absoluteUrl('/#software');
+  const application = absoluteUrl('/#application');
   const author = absoluteUrl('/#author');
   const webpage = `${url}#webpage`;
   const faq = `${url}#faq`;
   return { '@context': 'https://schema.org', '@graph': [
     { '@type': 'WebSite', '@id': website, name: 'AWSM', url: absoluteUrl('/'), inLanguage: ['en', 'id'], about: { '@id': software }, author: { '@id': author } },
     { '@type': 'Person', '@id': author, name: 'rikoarik', url: 'https://github.com/rikoarik' },
-    { '@type': 'SoftwareSourceCode', '@id': software, name: 'AWSM', description: copy.definition, codeRepository: sources.repository, url: sources.repository, sameAs: [sources.repository], license: sources.license, runtimePlatform: 'Node.js 18+', isAccessibleForFree: true, author: { '@id': author }, keywords: supportedClients.join(', ') },
+    { '@type': 'SoftwareSourceCode', '@id': software, name: 'AWSM', description: copy.definition, codeRepository: sources.repository, url: sources.repository, sameAs: [sources.repository], license: sources.license, runtimePlatform: 'Node.js 18+', isAccessibleForFree: true, author: { '@id': author }, targetProduct: { '@id': application }, keywords: supportedClients.join(', ') },
+    { '@type': 'SoftwareApplication', '@id': application, name: 'AWSM', description: copy.definition, applicationCategory: 'DeveloperApplication', softwareRequirements: 'Node.js 18+, npx and an MCP-compatible coding agent', runtimePlatform: 'Node.js 18+', url: absoluteUrl('/'), installUrl: sources.install, sameAs: [sources.repository], license: sources.license, isAccessibleForFree: true, author: { '@id': author }, subjectOf: { '@id': webpage } },
     { '@type': 'WebPage', '@id': webpage, name: copy.title, description: copy.description, url, inLanguage: locale, isPartOf: { '@id': website }, about: { '@id': software }, hasPart: { '@id': faq }, isAccessibleForFree: true },
     { '@type': 'FAQPage', '@id': faq, url: `${url}#faq`, inLanguage: locale, isPartOf: { '@id': webpage }, about: { '@id': software }, mainEntity: copy.faqs.map(item => ({ '@type': 'Question', name: item.question, acceptedAnswer: { '@type': 'Answer', text: item.answer, citation: item.source } })) },
   ] };

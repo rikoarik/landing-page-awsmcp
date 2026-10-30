@@ -3,6 +3,7 @@ import { chromium } from 'playwright';
 import fs from 'node:fs/promises';
 import { seoCopy } from '../lib/seo-content.ts';
 import { site, languageAlternates } from '../lib/site-config.ts';
+import { llmsText } from '../lib/llms.ts';
 const base = process.env.QA_URL || 'http://localhost:3001';
 const preview = process.env.QA_PREVIEW === 'true';
 const browser = await chromium.launch();
@@ -36,6 +37,13 @@ for (const locale of ['en', 'id']) {
   assert.equal(robots.includes('noindex'), preview);
   if (preview) assert.match(response.headers()['x-robots-tag'], /noindex/);
   const json = JSON.parse(await page.locator('script[type="application/ld+json"]').textContent());
+  assert.equal(await page.locator('script[type="application/ld+json"]').count(), 1);
+  const application = json['@graph'].find(node => node['@type'] === 'SoftwareApplication');
+  assert.equal(application.name, 'AWSM');
+  assert.equal(application.applicationCategory, 'DeveloperApplication');
+  assert.equal(application.isAccessibleForFree, true);
+  assert.equal(application.description, seoCopy[locale].definition);
+  assert.ok(!('softwareVersion' in application) && !('offers' in application));
   const faq = json['@graph'].find(node => node['@type'] === 'FAQPage');
   assert.equal(await page.locator('#faq details').count(), 6);
   for (let i = 0; i < 6; i++) {
@@ -78,6 +86,8 @@ else {
 const llms = await fetch(`${base}/llms.txt`);
 assert.match(llms.headers.get('content-type'), /text\/plain.*charset=utf-8/i);
 const text = await llms.text();
+assert.equal(llms.status, 200);
+assert.equal(text, llmsText());
 assert.ok(text.includes('https://github.com/rikoarik/figcraft-mcp-awsm'));
 assert.ok(text.includes(`${site.origin}/id`));
 assert.ok(text.includes('not a requirement for indexing'));

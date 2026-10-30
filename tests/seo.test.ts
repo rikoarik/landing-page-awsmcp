@@ -51,6 +51,14 @@ test('localized connected JSON-LD uses visible FAQ data and honest product ident
     const source = graph.find(node => node['@type'] === 'SoftwareSourceCode')!;
     assert.equal(source.codeRepository, sources.repository);
     assert.equal(source.runtimePlatform, 'Node.js 18+');
+    const application = graph.find(node => node['@type'] === 'SoftwareApplication')!;
+    assert.equal(application.applicationCategory, 'DeveloperApplication');
+    assert.equal(application.softwareRequirements, 'Node.js 18+, npx and an MCP-compatible coding agent');
+    assert.equal(application.installUrl, sources.install);
+    assert.equal(application.description, seoCopy[locale].definition);
+    assert.equal(application.isAccessibleForFree, true);
+    assert.deepEqual(source.targetProduct, { '@id': application['@id'] });
+    assert.ok(!('softwareVersion' in application) && !('offers' in application) && !('requirements' in application) && !('downloadUrl' in application));
     const faq = graph.find(node => node['@type'] === 'FAQPage')!;
     assert.equal(faq.mainEntity!.length, 6);
     assert.deepEqual(faq.mainEntity!.map(item => [item.name, item.acceptedAnswer.text]), seoCopy[locale].faqs.map(item => [item.question, item.answer]));
