@@ -11,7 +11,7 @@ import { Installer } from './installer';
 function Arrow() { return <svg className="arrow-icon" aria-hidden="true" width="15" height="15" viewBox="0 0 20 20" fill="none"><path d="M4 16 16 4M5 4h11v11" stroke="currentColor" strokeWidth="1.7" /></svg>; }
 function Wordmark({ className = '' }: { className?: string }) { return <span className={`wordmark ${className}`}>awsm</span>; }
 function Circuit({ t }: { t: Copy }) {
-  return <div className="circuit" aria-label={t.intelligence}>
+  return <div className="circuit" role="group" aria-label={t.intelligence}>
     <svg className="circuit-cables" viewBox="0 0 1328 430" preserveAspectRatio="none" aria-hidden="true"><path className="cable" d="M295 175 C370 175 336 255 468 255"/><path className="cable" d="M815 255 C910 255 865 120 968 120"/><path className="cable" d="M815 275 C915 275 868 350 968 350"/></svg>
     <div className="orbit-lines" aria-hidden="true">{Array.from({length: 15}, (_,i) => <i key={i} style={{ transform: `rotate(${i * 2.8 - 20}deg)` }} />)}</div>
     <div className="request-paper circuit-item"><div className="paper-bar">{t.agent}</div><p className="request-text"><span aria-hidden="true">&gt; </span><span className="desktop-request">{t.request}</span><span className="mobile-request">{t.requestMobile}</span></p><small>{t.contextOut}</small></div>
@@ -45,7 +45,7 @@ export function AwsmSite({ lang, answers }: { lang: Language; answers: React.Rea
       <section className="hero" aria-labelledby="hero-heading"><div className="wrap">
         <header className="site-header"><a href={lang === 'id' ? '/id' : '/'} className="brand-link" aria-label="AWSM"><Wordmark /></a><p className="descriptor">{t.descriptor}</p>
           <nav className="desktop-nav" aria-label={lang === 'en' ? 'Main navigation' : 'Navigasi utama'}>{t.nav.map((item,i) => <a key={item} href={['#workflow','#playground','#install'][i]}>{item}</a>)}<a href={links.github}>GitHub<Arrow /></a></nav>
-          <div className="language-switch" aria-label={lang === 'en' ? 'Language' : 'Bahasa'}>{(['en','id'] as const).map(value => <a key={value} lang={value} hrefLang={value} href={value === 'id' ? '/id' : '/'} aria-current={lang === value ? 'page' : undefined} onClick={preserveSection}>{value.toUpperCase()}</a>)}</div>
+          <div className="language-switch" role="group" aria-label={lang === 'en' ? 'Language' : 'Bahasa'}>{(['en','id'] as const).map(value => <a key={value} lang={value} hrefLang={value} href={value === 'id' ? '/id' : '/'} aria-current={lang === value ? 'page' : undefined} onClick={preserveSection}>{value.toUpperCase()}</a>)}</div>
           <button className="menu-toggle" ref={menuButton} aria-label={menu ? t.close : t.menu} aria-expanded={menu} aria-controls="mobile-menu" onClick={() => setMenu(!menu)}>{t.menu} <span aria-hidden="true">{menu ? '−' : '+'}</span></button>
           <AnimatePresence>{menu && <motion.nav id="mobile-menu" className="mobile-menu" aria-label={t.menu} initial={reduced ? false : { opacity: 0, y: -8 }} animate={{opacity: 1,y:0}} exit={reduced ? undefined : {opacity:0,y:-8}} transition={{duration:reduced ? 0 : 0.15}}>{t.nav.map((item,i) => <a key={i} href={['#workflow','#playground','#install'][i]} onClick={() => setMenu(false)}>{item}<span aria-hidden="true">↗</span></a>)}<a href={links.github} onClick={() => setMenu(false)}>GitHub<Arrow /></a></motion.nav>}</AnimatePresence>
         </header>

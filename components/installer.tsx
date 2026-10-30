@@ -22,7 +22,7 @@ export function Installer({ t, client }: { t: Copy; client: Client }) {
     <h2 id="install-heading">{t.setup}</h2><p className="section-intro">{t.requirements}</p>
     <div className="command-box">
       <div className="command-toolbar"><span>{t.projectSetup}<span className="toolbar-divider">/</span>{selected.name} {t.selected}</span><button onClick={copy} disabled={status === 'copying'} className="copy-button">{status === 'success' ? t.copied : status === 'copying' ? t.copyBusy : t.copy}<span aria-hidden="true">{status === 'success' ? ' ✓' : ' ⧉'}</span></button></div>
-      <pre tabIndex={0} aria-label={t.copy}><code data-testid="install-command">{command}</code></pre>
+      <pre tabIndex={0} role="region" aria-label={t.projectSetup}><code data-testid="install-command">{command}</code></pre>
       <div className="command-details"><p>{t.restart}</p><p className="config-path">{t.config}: <code>{client === 'zed' ? t.zedConfig : selected.config}</code></p></div>
       <p className={`copy-status ${status === 'error' ? 'has-error' : ''}`} aria-live="polite" role="status">{status === 'success' ? t.copySuccess : status === 'error' ? t.copyFailure : '\u00a0'}</p>
     </div>

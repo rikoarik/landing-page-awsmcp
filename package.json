@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit",
     "test": "node --experimental-strip-types --test tests/*.test.ts",
     "test:browser": "node tests/browser.mjs",
+    "test:a11y": "node tests/accessibility.mjs",
     "test:seo": "node --experimental-strip-types tests/seo-http.mjs",
     "generate:social": "node scripts/generate-social.mjs"
   },
@@ -25,6 +26,7 @@
     "@types/node": "^26.6.6",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
+    "axe-core": "^4.14.0",
     "playwright": "^1.64.1",
     "typescript": "^7.0.2"
   }

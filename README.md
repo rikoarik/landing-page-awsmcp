@@ -21,6 +21,7 @@ npm test
 npx playwright install chromium
 npm run test:browser
 npm run test:seo
+npm run test:a11y
 # Only needed when intentionally regenerating the committed social PNGs:
 npm run generate:social
 ```
