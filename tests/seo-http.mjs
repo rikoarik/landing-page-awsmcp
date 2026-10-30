@@ -1,0 +1,107 @@
+import assert from 'node:assert/strict';
+import { chromium } from 'playwright';
+import fs from 'node:fs/promises';
+import { seoCopy } from '../lib/seo-content.ts';
+import { site, languageAlternates } from '../lib/site-config.ts';
+const base = process.env.QA_URL || 'http://localhost:3001';
+const preview = process.env.QA_PREVIEW === 'true';
+const browser = await chromium.launch();
+const context = await browser.newContext({ javaScriptEnabled: false });
+const page = await context.newPage();
+const results = [];
+for (const locale of ['en', 'id']) {
+  const path = locale === 'id' ? '/id' : '/';
+  const response = await page.goto(`${base}${path}`);
+  assert.equal(response.status(), 200);
+  const html = await response.text();
+  assert.match(html, new RegExp(`<html[^>]+lang="${locale}"`));
+  const head = html.split('</head>')[0];
+  assert.ok(head.includes('name="google-site-verification" content="SkWS9P140S5JIylgkVzrSNzP3s4OgZo-XN8DSd0OZAY"'));
+  assert.equal(await page.locator('html').getAttribute('lang'), locale);
+  assert.ok((await page.locator('h1').textContent()).includes(locale === 'en' ? 'Good code.' : 'Kode rapi.'));
+  assert.equal(await page.title(), seoCopy[locale].title);
+  assert.equal(await page.locator('head meta[name="description"]').getAttribute('content'), seoCopy[locale].description);
+  assert.equal(new URL(await page.locator('head link[rel="canonical"]').getAttribute('href')).href, `${site.origin}${path}`);
+  for (const [lang, url] of Object.entries(languageAlternates())) assert.equal(new URL(await page.locator(`head link[hreflang="${lang}"]`).getAttribute('href')).href, url);
+  assert.equal(new URL(await page.locator('head meta[property="og:url"]').getAttribute('content')).href, `${site.origin}${path}`);
+  assert.equal(await page.locator('head meta[property="og:locale"]').getAttribute('content'), locale === 'en' ? 'en_US' : 'id_ID');
+  assert.equal(await page.locator('head meta[property="og:image:width"]').getAttribute('content'), '1200');
+  assert.equal(await page.locator('head meta[property="og:image:height"]').getAttribute('content'), '630');
+  assert.equal(await page.locator('head meta[name="twitter:card"]').getAttribute('content'), 'summary_large_image');
+  assert.equal(await page.locator('head meta[name="theme-color"]').getAttribute('content'), '#F4F34C');
+  assert.equal(await page.locator('head meta[name="msvalidate.01"]').count(), 0);
+  assert.equal(await page.locator('head link[rel="ard"]').getAttribute('href'), `${site.origin}/.well-known/ard.json`);
+  assert.equal(await page.locator('form').count(), 0); // WebMCP form coverage is not applicable.
+  const robots = await page.locator('head meta[name="robots"]').getAttribute('content');
+  assert.equal(robots.includes('noindex'), preview);
+  if (preview) assert.match(response.headers()['x-robots-tag'], /noindex/);
+  const json = JSON.parse(await page.locator('script[type="application/ld+json"]').textContent());
+  const faq = json['@graph'].find(node => node['@type'] === 'FAQPage');
+  assert.equal(await page.locator('#faq details').count(), 6);
+  for (let i = 0; i < 6; i++) {
+    assert.ok((await page.locator('#faq summary').nth(i).textContent()).includes(faq.mainEntity[i].name));
+    assert.equal(await page.locator('#faq .faq-answer p').nth(i).textContent(), faq.mainEntity[i].acceptedAnswer.text);
+  }
+  await page.locator('#faq summary').first().focus();
+  await page.keyboard.press('Enter');
+  assert.equal(await page.locator('#faq details').first().getAttribute('open'), '');
+  assert.equal(await page.locator('.support a').count(), 1);
+  const imageUrl = new URL(await page.locator('head meta[property="og:image"]').getAttribute('content'));
+  assert.equal(imageUrl.origin, site.origin);
+  const image = await fetch(`${base}${imageUrl.pathname}`);
+  assert.equal(image.status, 200);
+  assert.match(image.headers.get('content-type'), /image\/png/);
+  const bytes = Buffer.from(await image.arrayBuffer());
+  assert.equal(bytes.subarray(1, 4).toString(), 'PNG');
+  assert.equal(bytes.readUInt32BE(16), 1200);
+  assert.equal(bytes.readUInt32BE(20), 630);
+  results.push({ locale, status: 200, initialLang: locale, javaScriptDisabled: true, metadata: true, jsonLdFaqParity: true, socialPng: '1200x630' });
+}
+for (const path of ['/', '/id']) for (const lang of ['en', 'id', 'unknown']) {
+  const response = await fetch(`${base}${path}?lang=${lang}&utm_source=qa`, { redirect: 'manual' });
+  assert.equal(response.status, 308);
+  const location = new URL(response.headers.get('location'), base);
+  assert.equal(location.pathname, lang === 'en' ? '/' : lang === 'id' ? '/id' : path);
+  assert.equal(location.search, '?utm_source=qa');
+  assert.equal((await fetch(location, { redirect: 'manual' })).status, 200);
+}
+const robots = await (await fetch(`${base}/robots.txt`)).text();
+const sitemap = await (await fetch(`${base}/sitemap.xml`)).text();
+if (preview) { assert.match(robots, /Disallow: \//); assert.ok(!sitemap.includes('<url>')); }
+else {
+  assert.match(robots, /Allow: \//);
+  assert.ok(robots.includes(`${site.origin}/sitemap.xml`));
+  assert.equal((sitemap.match(/<loc>/g) || []).length, 2);
+  for (const [locale, href] of Object.entries(languageAlternates())) assert.equal(sitemap.split(`hreflang="${locale}" href="${href}"`).length - 1, 2);
+  assert.ok(!/lastmod|\?lang=|llms|social/.test(sitemap));
+}
+const llms = await fetch(`${base}/llms.txt`);
+assert.match(llms.headers.get('content-type'), /text\/plain.*charset=utf-8/i);
+const text = await llms.text();
+assert.ok(text.includes('https://github.com/rikoarik/figcraft-mcp-awsm'));
+assert.ok(text.includes(`${site.origin}/id`));
+assert.ok(text.includes('not a requirement for indexing'));
+assert.match(text, /^# AWSM\n\n> /);
+assert.ok(text.length >= 50);
+assert.match(text, /\[[^\]]+\]\(https:\/\/[^)]+\)/);
+for (const section of text.split(/^## /m).slice(1)) assert.match(section, /^.+\n- \[/);
+const ardResponse = await fetch(`${base}/.well-known/ard.json`);
+assert.equal(ardResponse.status, 200);
+assert.match(ardResponse.headers.get('content-type'), /application\/json/);
+const ard = await ardResponse.json();
+assert.equal(ard.entries.length, 1);
+assert.equal(ard.entries[0].identifier, 'urn:air:useawsm.web.id:skill:awsm-design');
+assert.equal(ard.entries[0].type, 'application/agent-skills+md');
+assert.equal(ard.entries[0].representativeQueries.length, 3);
+assert.ok(!('data' in ard.entries[0]));
+assert.ok(!('trustManifest' in ard.entries[0]));
+const missing = await page.goto(`${base}/this-page-does-not-exist`);
+assert.equal(missing.status(), 404);
+assert.match(await page.locator('meta[name="robots"]').getAttribute('content'), /noindex/);
+const verification = await fetch(`${base}/googled18487ecc4f9648a.html`);
+assert.equal(verification.status, 200);
+assert.equal(await verification.text(), await fs.readFile('public/googled18487ecc4f9648a.html', 'utf8'));
+await browser.close();
+await fs.mkdir('qa', { recursive: true });
+await fs.writeFile(`qa/seo-${preview ? 'preview' : 'http'}-results.json`, JSON.stringify({ base, preview, results, redirects: true, crawlerRoutes: true, notFound: 404, googleVerification: 'HTML file + head tag, local only' }, null, 2));
+console.log(`PASS: SEO HTTP/SSR, JS-disabled locales, metadata, schema parity, redirects, discovery, PNGs, 404, verification${preview ? ' and preview noindex' : ''}.`);

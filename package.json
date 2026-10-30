@@ -8,8 +8,10 @@
     "build": "next build",
     "start": "next start --hostname 0.0.0.0",
     "typecheck": "tsc --noEmit",
-    "test": "node --experimental-strip-types --test tests/installer.test.ts",
-    "test:browser": "node tests/browser.mjs"
+    "test": "node --experimental-strip-types --test tests/*.test.ts",
+    "test:browser": "node tests/browser.mjs",
+    "test:seo": "node --experimental-strip-types tests/seo-http.mjs",
+    "generate:social": "node scripts/generate-social.mjs"
   },
   "dependencies": {
     "framer-motion": "^14.9.0",

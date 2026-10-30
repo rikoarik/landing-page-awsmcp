@@ -22,8 +22,7 @@ function Circuit({ t }: { t: Copy }) {
   </div>;
 }
 
-export function AwsmSite() {
-  const [lang, setLang] = useState<Language>('en');
+export function AwsmSite({ lang, answers }: { lang: Language; answers: React.ReactNode }) {
   const [client, setClient] = useState<Client>('opencode');
   const [menu, setMenu] = useState(false);
   const root = useRef<HTMLDivElement>(null);
@@ -31,34 +30,22 @@ export function AwsmSite() {
   const reduced = useReducedMotion();
   const t = content[lang];
   useEffect(() => {
-    const sync = () => {
-      const param = new URL(window.location.href).searchParams.get('lang');
-      let stored: string | null = null;
-      try { stored = localStorage.getItem('awsm-language'); } catch { /* Storage may be disabled. */ }
-      const next = param === 'en' || param === 'id' ? param : stored === 'id' ? 'id' : 'en';
-      setLang(next); document.documentElement.lang = next;
-    };
-    sync(); window.addEventListener('popstate', sync);
-    return () => window.removeEventListener('popstate', sync);
-  }, []);
-  useEffect(() => {
     if (!menu) return;
     const escape = (event: KeyboardEvent) => { if (event.key === 'Escape') { setMenu(false); menuButton.current?.focus(); } };
     window.addEventListener('keydown', escape);
     return () => window.removeEventListener('keydown', escape);
   }, [menu]);
-  function changeLanguage(next: Language) {
-    setLang(next); document.documentElement.lang = next;
-    try { localStorage.setItem('awsm-language', next); } catch { /* URL remains available. */ }
-    const url = new URL(window.location.href); url.searchParams.set('lang', next); window.history.replaceState(null, '', url);
+  function preserveSection(event: React.MouseEvent<HTMLAnchorElement>) {
+    // Keep native document navigation and modifier keys; enhance only the anchor.
+    event.currentTarget.hash = window.location.hash;
   }
   return <MotionConfig reducedMotion="user"><div ref={root} data-language={lang}>
     <MotionSystem root={root}/><a className="skip-link" href="#main">{t.skip}</a>
     <main id="main">
       <section className="hero" aria-labelledby="hero-heading"><div className="wrap">
-        <header className="site-header"><a href={lang === 'id' ? '/?lang=id' : '/'} className="brand-link" aria-label="AWSM"><Wordmark /></a><p className="descriptor">{t.descriptor}</p>
+        <header className="site-header"><a href={lang === 'id' ? '/id' : '/'} className="brand-link" aria-label="AWSM"><Wordmark /></a><p className="descriptor">{t.descriptor}</p>
           <nav className="desktop-nav" aria-label={lang === 'en' ? 'Main navigation' : 'Navigasi utama'}>{t.nav.map((item,i) => <a key={item} href={['#workflow','#playground','#install'][i]}>{item}</a>)}<a href={links.github}>GitHub<Arrow /></a></nav>
-          <div className="language-switch" aria-label={lang === 'en' ? 'Language' : 'Bahasa'}>{(['en','id'] as const).map(value => <button key={value} lang={value} aria-pressed={lang === value} onClick={() => changeLanguage(value)}>{value.toUpperCase()}</button>)}</div>
+          <div className="language-switch" aria-label={lang === 'en' ? 'Language' : 'Bahasa'}>{(['en','id'] as const).map(value => <a key={value} lang={value} hrefLang={value} href={value === 'id' ? '/id' : '/'} aria-current={lang === value ? 'page' : undefined} onClick={preserveSection}>{value.toUpperCase()}</a>)}</div>
           <button className="menu-toggle" ref={menuButton} aria-label={menu ? t.close : t.menu} aria-expanded={menu} aria-controls="mobile-menu" onClick={() => setMenu(!menu)}>{t.menu} <span aria-hidden="true">{menu ? '−' : '+'}</span></button>
           <AnimatePresence>{menu && <motion.nav id="mobile-menu" className="mobile-menu" aria-label={t.menu} initial={reduced ? false : { opacity: 0, y: -8 }} animate={{opacity: 1,y:0}} exit={reduced ? undefined : {opacity:0,y:-8}} transition={{duration:reduced ? 0 : 0.15}}>{t.nav.map((item,i) => <a key={i} href={['#workflow','#playground','#install'][i]} onClick={() => setMenu(false)}>{item}<span aria-hidden="true">↗</span></a>)}<a href={links.github} onClick={() => setMenu(false)}>GitHub<Arrow /></a></motion.nav>}</AnimatePresence>
         </header>
@@ -78,6 +65,7 @@ export function AwsmSite() {
       </div></section>
       <section className="agents section" aria-labelledby="agents-heading"><div className="wrap"><h2 id="agents-heading">{t.agents}</h2><p className="section-intro">{t.agentsIntro}</p><div className="client-selector" role="group" aria-label={t.agentLabel}>{clients.map(item => <motion.button tabIndex={0} whileTap={reduced ? undefined : { y: 2 }} key={item.value} data-client={item.value} aria-pressed={item.value === client} onClick={() => setClient(item.value)}>{item.name}<span aria-hidden="true">{item.value === client ? ' ↗' : ''}</span></motion.button>)}</div><div className="client-notes"><code>--client opencode | claude | codex | antigravity | copilot | zed</code><p>{t.zedNote}</p></div></div></section>
       <Installer t={t} client={client}/>
+      {answers}
       <section className="open-source section" aria-labelledby="source-heading"><div className="wrap"><h2 id="source-heading">{t.sourceTitle.map(line => <span key={line}>{line}</span>)}</h2><div className="source-bottom"><div><p>{t.sourceBody}</p><a className="button button-dark" href={links.github}>{t.github}<Arrow /></a></div><div className="circuit-seal" aria-hidden="true">{Array.from({length:7},(_,i) => <i key={i} style={{inset: `${i*10}px`}}/>)}<span>&lt;/&gt;</span></div></div><div className="source-rule"><a href={links.github}>github.com/rikoarik/figcraft-mcp-awsm</a><a href={links.license}>MIT<Arrow /></a></div></div></section>
       <section className="support section" aria-labelledby="coffee-heading"><div className="wrap support-grid"><div><h2 id="coffee-heading">{t.coffee.map(line => <span key={line}>{line}</span>)}</h2><p>{t.coffeeBody}</p></div><div className="support-actions"><a className="button button-dark" href={links.saweria}>{t.coffeeCta}<Arrow /></a></div><p className="fineprint support-optional">{t.optional}</p></div></section>
     </main>

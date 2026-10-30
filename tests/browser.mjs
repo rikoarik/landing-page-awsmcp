@@ -43,27 +43,28 @@ assert.equal(await page.locator('.command-box pre').getAttribute('tabindex'), '0
 // Tabs: keyboard automatic activation, relationships, and full set of tool panels.
 await page.locator('#tool-tab-1').focus();
 await page.keyboard.press('ArrowLeft');
-await page.locator('#tool-panel-0').waitFor();
+await page.locator('[data-tool-panel="0"]').waitFor();
 assert.equal(await page.locator('#tool-tab-0').getAttribute('aria-selected'), 'true');
 await page.keyboard.press('End');
-await page.locator('#tool-panel-3').waitFor();
+await page.locator('[data-tool-panel="3"]').waitFor();
 assert.equal(await page.locator('#tool-tab-3').getAttribute('aria-selected'), 'true');
-for (let i = 0; i < 4; i++) { await page.locator(`#tool-tab-${i}`).click(); await page.locator(`#tool-panel-${i}`).waitFor(); }
+for (let i = 0; i < 4; i++) { await page.locator(`#tool-tab-${i}`).click(); await page.locator(`[data-tool-panel="${i}"]`).waitFor(); }
 await page.locator('#tool-tab-1').click();
-await page.locator('#tool-panel-1').waitFor();
+await page.locator('[data-tool-panel="1"]').waitFor();
 
-// EN/ID persistence and URL + document language; language swaps keep main mounted.
-await page.evaluate(() => { document.querySelector('main').dataset.qaIdentity = 'same-main'; });
-await page.getByRole('button', { name: 'ID', exact: true }).click();
+// Real crawlable locale links: URL is authoritative; metadata follows navigation.
+await page.evaluate(() => { localStorage.setItem('awsm-language', 'id'); });
+await page.goto(`${base}/#faq`);
+await page.getByRole('link', { name: 'ID', exact: true }).click();
+await page.waitForURL(`${base}/id#faq`);
 assert.equal(await page.locator('html').getAttribute('lang'), 'id');
-assert.ok(page.url().includes('lang=id'));
-assert.equal(await page.locator('main').getAttribute('data-qa-identity'), 'same-main');
 assert.ok((await page.locator('h1').textContent()).includes('Kode rapi.'));
+assert.ok((await page.title()).includes('MCP lokal'));
 await page.reload();
 await page.locator('[data-language="id"]').waitFor();
-assert.equal(await page.locator('html').getAttribute('lang'), 'id');
 await page.goto(base);
-await page.locator('[data-language="id"]').waitFor();
+await page.locator('[data-language="en"]').waitFor();
+await page.goto(`${base}/id`);
 
 // Mobile navigation: expansion, Escape focus return, and real anchor close.
 await page.setViewportSize({ width: 375, height: 812 });
@@ -90,7 +91,7 @@ const results = [];
 for (const [width, height] of matrix) {
   await page.setViewportSize({ width, height });
   for (const lang of ['en','id']) {
-    await page.goto(`${base}/?lang=${lang}`);
+    await page.goto(`${base}${lang === 'id' ? '/id' : '/'}`);
     await page.locator(`[data-language="${lang}"]`).waitFor();
     assert.equal(await page.locator('.support a').count(), 1);
     assert.equal(await page.locator('.support a').getAttribute('href'), 'https://saweria.co/arkids');
@@ -114,7 +115,7 @@ for (const [width, height] of matrix) {
 // Native reduced motion dynamically tears down Lenis; no all-page visibility tricks.
 await page.setViewportSize({ width: 1440, height: 1000 });
 await page.emulateMedia({ reducedMotion: 'reduce' });
-await page.goto(`${base}/?lang=en`);
+await page.goto(`${base}/`);
 await page.locator('[data-language="en"]').waitFor();
 assert.equal(await page.locator('html').evaluate(el => el.classList.contains('lenis')), false);
 for (const [section, name] of [['#workflow','workflow'],['#playground','playground'],['#handoff','handoff'],['#install','install'],['.support','support']]) {
@@ -122,7 +123,7 @@ for (const [section, name] of [['#workflow','workflow'],['#playground','playgrou
   await page.screenshot({ path: `qa/section-${name}-desktop.png` });
 }
 await page.setViewportSize({ width:375,height:812 });
-await page.goto(`${base}/?lang=id`);
+await page.goto(`${base}/id`);
 await page.locator('[data-language="id"]').waitFor();
 await page.screenshot({ path:'qa/reduced-mobile-id.png' });
 await page.locator('#playground').evaluate(el => window.scrollTo(0, el.offsetTop));
@@ -132,18 +133,38 @@ await page.screenshot({ path:'qa/install-mobile-id.png' });
 for (const [width, height, size] of [[1440, 1000, 'desktop'], [375, 812, 'mobile']]) {
   await page.setViewportSize({ width, height });
   for (const lang of ['en', 'id']) {
-    await page.goto(`${base}/?lang=${lang}`);
+    await page.goto(`${base}${lang === 'id' ? '/id' : '/'}`);
     await page.locator(`[data-language="${lang}"]`).waitFor();
     await page.locator('.support').evaluate(el => window.scrollTo(0, el.offsetTop));
     await page.screenshot({ path: `qa/support-${size}-${lang}.png` });
   }
 }
+// Native FAQs remain keyboard operable at each viewport and locale.
+for (const [width, height, size] of [[1440, 1000, 'desktop'], [375, 812, 'mobile']]) {
+  await page.setViewportSize({ width, height });
+  for (const lang of ['en', 'id']) {
+    await page.goto(`${base}${lang === 'id' ? '/id' : '/'}`);
+    await page.evaluate(() => document.fonts.ready);
+    assert.equal(await page.locator('#faq details').count(), 6);
+    const summary = page.locator('#faq summary').first();
+    await summary.focus();
+    await page.keyboard.press('Enter');
+    assert.equal(await page.locator('#faq details').first().getAttribute('open'), '');
+    await page.locator('#faq').evaluate(el => window.scrollTo(0, el.offsetTop));
+    await page.screenshot({ path: `qa/seo-facts-${size}-${lang}.png` });
+    await page.locator('.faq-layout').evaluate(el => window.scrollTo(0, el.offsetTop - 24));
+    await page.screenshot({ path: `qa/seo-faq-${size}-${lang}.png` });
+    await page.keyboard.press('Enter');
+    assert.equal(await page.locator('#faq details').first().getAttribute('open'), null);
+  }
+}
+assert.equal(await page.locator('[role="tab"]').evaluateAll(tabs => tabs.every(tab => document.getElementById(tab.getAttribute('aria-controls')))), true);
 await page.emulateMedia({ reducedMotion:'no-preference' });
 await page.waitForFunction(() => document.documentElement.classList.contains('lenis'));
 await page.emulateMedia({ reducedMotion:'reduce' });
 await page.waitForFunction(() => !document.documentElement.classList.contains('lenis'));
 assert.deepEqual(errors, []);
 assert.deepEqual(remoteRequests, []);
-await fs.writeFile('qa/results.json', JSON.stringify({ base, matrix:results, checks:['SSR', 'all six client commands','clipboard success + denial','tabs keyboard','EN/ID persistence','same main on toggle','mobile menu + Escape + anchor','outbound links','no overflow','full aspect image','dynamic reduced motion','no runtime remote requests','no page or console errors'], errors, remoteRequests }, null, 2));
+await fs.writeFile('qa/results.json', JSON.stringify({ base, matrix:results, checks:['SSR', 'all six client commands','clipboard success + denial','tabs keyboard','canonical EN/ID document navigation + hash','URL overrides stored preference','mobile menu + Escape + anchor','outbound links','no overflow','full aspect image','dynamic reduced motion','no runtime remote requests','no page or console errors'], errors, remoteRequests }, null, 2));
 await browser.close();
 console.log('PASS: browser matrix and all interaction checks. Evidence: qa/results.json');
