@@ -20,7 +20,7 @@ export const supportedClients = ['OpenCode', '[CC]', 'Codex', 'Google Antigravit
 export const seoCopy = {
   en: {
     title: 'AWSM — Local MCP for 3D, drafting and interface design',
-    description: 'One local MCP server, four routes: parametric 3D in SolidCraft, measured drafting in CADCraft, editable canvas in FigCraft, and browser QA. 24 typed tools, no hosted service.',
+    description: 'One local MCP server, four routes: parametric 3D, measured drafting, editable canvas and browser QA. 24 typed tools, no hosted service.',
     heading: 'Know what you are opening.',
     definition: 'AWSM is an open-source local Model Context Protocol (MCP) server that routes a coding agent to four kinds of design work — parametric 3D modelling, measured drafting, editable canvas design and browser-based visual QA — through one local stdio connection, with 24 typed tools and no hosted service.',
     facts: [
@@ -43,8 +43,8 @@ export const seoCopy = {
     ],
   },
   id: {
-    title: 'AWSM — MCP lokal untuk 3D, gambar teknik dan desain antarmuka',
-    description: 'Satu server MCP lokal, empat rute: 3D parametrik di SolidCraft, gambar teknik terukur di CADCraft, kanvas yang bisa diedit di FigCraft, dan QA browser. 24 tool bertipe, tanpa layanan hosting.',
+    title: 'AWSM — MCP lokal untuk 3D, gambar teknik dan UI',
+    description: 'Satu server MCP lokal, empat rute: 3D parametrik, gambar teknik terukur, kanvas yang bisa diedit, dan QA browser. 24 tool bertipe, tanpa hosting.',
     heading: 'Kenali apa yang kamu buka.',
     definition: 'AWSM adalah server Model Context Protocol (MCP) lokal dan open source yang mengarahkan coding agent ke empat jenis pekerjaan desain — pemodelan 3D parametrik, gambar teknik yang terukur, desain kanvas yang bisa diedit, dan QA visual berbasis browser — melalui satu koneksi stdio lokal, dengan 24 tool bertipe dan tanpa layanan hosting.',
     facts: [
