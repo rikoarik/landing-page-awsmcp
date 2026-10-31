@@ -14,7 +14,7 @@ try {
       await page.setViewportSize({ width, height: 1000 });
       await page.goto(`${base}${locale === 'id' ? '/id' : '/'}`);
       await page.addScriptTag({ path: require.resolve('axe-core/axe.min.js') });
-      for (let tab = 0; tab < 4; tab++) {
+      for (let tab = 0; tab < 5; tab++) {
         await page.locator(`#tool-tab-${tab}`).click();
         await page.locator(`[data-tool-panel="${tab}"]`).waitFor();
         const audit = await page.evaluate(async () => {
@@ -39,7 +39,7 @@ try {
   const violations = results.filter(result => result.violations.length);
   assert.deepEqual(violations, [], 'ARIA violations; see qa/accessibility-aria-results.json');
   assert.deepEqual(results.filter(result => result.incomplete?.length), [], 'ARIA checks requiring manual review; see qa/accessibility-aria-results.json');
-  console.log('PASS: axe-core ARIA checks, EN/ID, desktop/mobile, all four panels and expanded menus. Not a full WCAG audit.');
+  console.log('PASS: axe-core ARIA checks, EN/ID, desktop/mobile, all five panels and expanded menus. Not a full WCAG audit.');
 } finally {
   await browser.close();
 }

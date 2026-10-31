@@ -12,7 +12,10 @@
     "test:browser": "node tests/browser.mjs",
     "test:a11y": "node tests/accessibility.mjs",
     "test:seo": "node --experimental-strip-types tests/seo-http.mjs",
-    "generate:social": "node scripts/generate-social.mjs"
+    "generate:social": "node scripts/generate-social.mjs",
+    "build:3d": "node scripts/build-3d.mjs",
+    "verify:3d": "node scripts/render-3d.mjs",
+    "figcraft": "node scripts/figcraft-mcp.mjs"
   },
   "dependencies": {
     "framer-motion": "^14.9.0",
@@ -20,12 +23,14 @@
     "lenis": "^1.3.27",
     "next": "^16.4.3",
     "react": "^19.3.1",
-    "react-dom": "^19.3.1"
+    "react-dom": "^19.3.1",
+    "three": "^0.187.0"
   },
   "devDependencies": {
     "@types/node": "^26.6.6",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
+    "@types/three": "^0.187.0",
     "axe-core": "^4.14.0",
     "playwright": "^1.64.1",
     "typescript": "^7.0.2"

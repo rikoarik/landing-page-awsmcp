@@ -1,0 +1,51 @@
+{
+  "name": "awsm-router",
+  "source": "SolidCraft awsm-router.sc",
+  "units": {
+    "model": "mm",
+    "scene": "m"
+  },
+  "centreMm": [
+    0,
+    -1.4,
+    19
+  ],
+  "sockets": [
+    {
+      "id": "context",
+      "scene": [
+        -0.036,
+        -0.006,
+        0.0444
+      ]
+    },
+    {
+      "id": "assets",
+      "scene": [
+        -0.012,
+        -0.006,
+        0.0444
+      ]
+    },
+    {
+      "id": "handoff",
+      "scene": [
+        0.012,
+        -0.006,
+        0.0444
+      ]
+    },
+    {
+      "id": "qa",
+      "scene": [
+        0.036,
+        -0.006,
+        0.0444
+      ]
+    }
+  ],
+  "mesh": {
+    "triangles": 25186,
+    "materials": 10
+  }
+}

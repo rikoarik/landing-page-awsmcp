@@ -60,7 +60,7 @@ test('localized connected JSON-LD uses visible FAQ data and honest product ident
     assert.deepEqual(source.targetProduct, { '@id': application['@id'] });
     assert.ok(!('softwareVersion' in application) && !('offers' in application) && !('requirements' in application) && !('downloadUrl' in application));
     const faq = graph.find(node => node['@type'] === 'FAQPage')!;
-    assert.equal(faq.mainEntity!.length, 6);
+    assert.equal(faq.mainEntity!.length, seoCopy[locale].faqs.length);
     assert.deepEqual(faq.mainEntity!.map(item => [item.name, item.acceptedAnswer.text]), seoCopy[locale].faqs.map(item => [item.question, item.answer]));
     const encoded = JSON.stringify(graph);
     assert.ok(!/aggregateRating|SearchAction|LocalBusiness|geocoordinates|landing-page-awsmcp/.test(encoded));
@@ -77,7 +77,7 @@ test('ARD advertises only the actual upstream Markdown skill, not execution or t
   const entry = ardManifest().entries[0];
   assert.equal(entry.identifier, 'urn:air:useawsm.web.id:skill:awsm-design');
   assert.equal(entry.type, 'application/agent-skills+md');
-  assert.equal(entry.url, 'https://raw.githubusercontent.com/rikoarik/figcraft-mcp-awsm/main/skills/awsm-design/SKILL.md');
+  assert.equal(entry.url, 'https://raw.githubusercontent.com/rikoarik/artcraft-mcp-awsm/main/skills/awsm-design/SKILL.md');
   assert.ok(!('data' in entry) && !('trustManifest' in entry));
   assert.ok(entry.representativeQueries.length >= 2 && entry.representativeQueries.length <= 5);
 });

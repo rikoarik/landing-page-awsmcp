@@ -29,16 +29,17 @@ for (const client of ['opencode', 'claude', 'codex', 'antigravity', 'copilot', '
   const command = await page.getByTestId('install-command').textContent();
   assert.ok(command.includes(`--client ${client}`));
   assert.equal(command.includes('--global'), client === 'zed');
-  await page.getByRole('button', { name: 'Copy command' }).click();
-  await page.getByRole('status').filter({ hasText: 'Command copied.' }).waitFor();
+  await page.locator('#install').getByRole('button', { name: 'Copy command' }).click();
+  await page.locator('#install').getByRole('status').filter({ hasText: 'Command copied.' }).waitFor();
   assert.equal(await page.evaluate(() => navigator.clipboard.readText()), command);
 }
 await page.locator('[data-client="opencode"]').click();
-await page.waitForFunction(() => !document.querySelector('[role="status"]').textContent.includes('Command copied'));
+await page.waitForFunction(() => !document.querySelector('#install [role="status"]').textContent.includes('Command copied'));
 await page.evaluate(() => Object.defineProperty(navigator.clipboard, 'writeText', { configurable: true, value: () => Promise.reject(new Error('denied for QA')) }));
-await page.getByRole('button', { name: 'Copy command' }).click();
-await page.getByRole('status').filter({ hasText: 'copy it manually' }).waitFor();
-assert.equal(await page.locator('.command-box pre').getAttribute('tabindex'), '0');
+await page.locator('#install').getByRole('button', { name: 'Copy command' }).click();
+await page.locator('#install').getByRole('status').filter({ hasText: 'copy it manually' }).waitFor();
+assert.equal(await page.locator('#install .command-box pre').getAttribute('tabindex'), '0');
+assert.equal(await page.locator('#upgrade .command-box pre').getAttribute('tabindex'), '0');
 
 // Tabs: keyboard automatic activation, relationships, and full set of tool panels.
 await page.locator('#tool-tab-1').focus();
@@ -46,9 +47,9 @@ await page.keyboard.press('ArrowLeft');
 await page.locator('[data-tool-panel="0"]').waitFor();
 assert.equal(await page.locator('#tool-tab-0').getAttribute('aria-selected'), 'true');
 await page.keyboard.press('End');
-await page.locator('[data-tool-panel="3"]').waitFor();
-assert.equal(await page.locator('#tool-tab-3').getAttribute('aria-selected'), 'true');
-for (let i = 0; i < 4; i++) { await page.locator(`#tool-tab-${i}`).click(); await page.locator(`[data-tool-panel="${i}"]`).waitFor(); }
+await page.locator('[data-tool-panel="4"]').waitFor();
+assert.equal(await page.locator('#tool-tab-4').getAttribute('aria-selected'), 'true');
+for (let i = 0; i < 5; i++) { await page.locator(`#tool-tab-${i}`).click(); await page.locator(`[data-tool-panel="${i}"]`).waitFor(); }
 await page.locator('#tool-tab-1').click();
 await page.locator('[data-tool-panel="1"]').waitFor();
 
@@ -81,7 +82,8 @@ assert.ok(page.url().endsWith('#install'));
 
 // Honest outbound destinations, no donation is submitted.
 const destinations = await page.locator('a[href^="https:"]').evaluateAll(els => els.map(el => el.href));
-for (const expected of ['https://getartcraft.com/apps/figcraft', 'https://saweria.co/arkids', 'https://github.com/rikoarik/figcraft-mcp-awsm', 'https://github.com/rikoarik/figcraft-mcp-awsm/issues', 'https://github.com/rikoarik/figcraft-mcp-awsm/blob/main/LICENSE']) assert.ok(destinations.includes(expected), expected);
+for (const expected of ['https://getartcraft.com/apps/figcraft', 'https://saweria.co/arkids', 'https://github.com/rikoarik/artcraft-mcp-awsm', 'https://github.com/rikoarik/artcraft-mcp-awsm/issues', 'https://github.com/rikoarik/artcraft-mcp-awsm/blob/main/LICENSE']) assert.ok(destinations.includes(expected), expected);
+assert.ok(!destinations.some(url => url.includes('figcraft-mcp-awsm')), 'no link may point at the retired repository');
 assert.equal(destinations.filter(url => url === 'https://saweria.co/arkids').length, 1);
 assert.equal(await page.locator('a[href="#"]').count(), 0);
 
@@ -98,11 +100,23 @@ for (const [width, height] of matrix) {
     assert.equal(await page.locator('.support a').textContent(), lang === 'en' ? 'Trakteer a coffee' : 'Traktir kopi');
     assert.ok(!/QRIS|SAWERIA\.CO\/ARKIDS|Choose your payment method|Pilih metode pembayaran/.test(await page.locator('.support').textContent()));
     await page.evaluate(() => document.fonts.ready);
-    await page.waitForFunction(() => [...document.images].every(img => img.complete && img.naturalWidth > 0));
+    // Images below the fold are intentionally lazy; walk the page so each one is
+    // requested, then assert that all of them actually decoded.
+    await page.evaluate(async () => {
+      const step = window.innerHeight;
+      for (let y = 0; y <= document.documentElement.scrollHeight; y += step) {
+        window.scrollTo(0, y);
+        await new Promise(resolve => requestAnimationFrame(() => setTimeout(resolve, 60)));
+      }
+      window.scrollTo(0, 0);
+    });
+    await page.waitForFunction(() => [...document.images].every(img => img.complete && img.naturalWidth > 0), null, { timeout: 20000 });
     const dimensions = await page.evaluate(() => ({ width: innerWidth, content: document.documentElement.scrollWidth }));
     assert.ok(dimensions.content <= dimensions.width + 1, `Overflow at ${width} ${lang}: ${JSON.stringify(dimensions)}`);
     const heading = await page.locator('h1').boundingBox();
     assert.ok(heading.x >= 0 && heading.x + heading.width <= width);
+    await page.locator('#tool-tab-1').click();
+    await page.locator('[data-tool-panel="1"]').waitFor();
     const imageRatio = await page.locator('.reference-figure img').evaluate(img => img.clientWidth / img.clientHeight);
     assert.ok(Math.abs(imageRatio - 1440/840) < 0.02);
     // Wait for the finite circuit-assembly animation, not arbitrary network idleness.
@@ -118,7 +132,7 @@ await page.emulateMedia({ reducedMotion: 'reduce' });
 await page.goto(`${base}/`);
 await page.locator('[data-language="en"]').waitFor();
 assert.equal(await page.locator('html').evaluate(el => el.classList.contains('lenis')), false);
-for (const [section, name] of [['#workflow','workflow'],['#playground','playground'],['#handoff','handoff'],['#install','install'],['.support','support']]) {
+for (const [section, name] of [['#router','router'],['#workflow','workflow'],['#pipeline','pipeline'],['#playground','playground'],['#handoff','handoff'],['#install','install'],['#upgrade','upgrade'],['.support','support']]) {
   await page.locator(section).scrollIntoViewIfNeeded();
   await page.screenshot({ path: `qa/section-${name}-desktop.png` });
 }
@@ -165,6 +179,6 @@ await page.emulateMedia({ reducedMotion:'reduce' });
 await page.waitForFunction(() => !document.documentElement.classList.contains('lenis'));
 assert.deepEqual(errors, []);
 assert.deepEqual(remoteRequests, []);
-await fs.writeFile('qa/results.json', JSON.stringify({ base, matrix:results, checks:['SSR', 'all six client commands','clipboard success + denial','tabs keyboard','canonical EN/ID document navigation + hash','URL overrides stored preference','mobile menu + Escape + anchor','outbound links','no overflow','full aspect image','dynamic reduced motion','no runtime remote requests','no page or console errors'], errors, remoteRequests }, null, 2));
+await fs.writeFile('qa/results.json', JSON.stringify({ base, matrix:results, checks:['SSR', 'all six client commands','clipboard success + denial','5 tabs keyboard','canonical EN/ID document navigation + hash','URL overrides stored preference','mobile menu + Escape + anchor','outbound links (renamed repository)','no overflow','full aspect image','dynamic reduced motion','no runtime remote requests','no page or console errors'], errors, remoteRequests }, null, 2));
 await browser.close();
 console.log('PASS: browser matrix and all interaction checks. Evidence: qa/results.json');

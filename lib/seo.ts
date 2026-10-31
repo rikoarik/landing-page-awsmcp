@@ -5,7 +5,7 @@ import { seoCopy, sources, supportedClients } from './seo-content.ts';
 export function pageMetadata(locale: Locale): Metadata {
   const copy = seoCopy[locale];
   const url = absoluteUrl(localePath(locale));
-  const image = { url: absoluteUrl(`/social/awsm-${locale}.png`), width: 1200, height: 630, type: 'image/png', alt: locale === 'en' ? 'AWSM: local MCP, design context to interface. 23 typed tools.' : 'AWSM: MCP lokal, dari konteks desain ke antarmuka. 23 tool bertipe.' };
+  const image = { url: absoluteUrl(`/social/awsm-${locale}.png`), width: 1200, height: 630, type: 'image/png', alt: locale === 'en' ? 'AWSM: local MCP, design context to interface. 24 typed tools, SolidCraft 3D.' : 'AWSM: MCP lokal, dari konteks desain ke antarmuka. 24 tool bertipe, 3D SolidCraft.' };
   return {
     metadataBase: new URL(site.origin), title: copy.title, description: copy.description, applicationName: 'AWSM',
     alternates: { canonical: url, languages: languageAlternates() },

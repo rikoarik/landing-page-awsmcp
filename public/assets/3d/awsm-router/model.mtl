@@ -1,0 +1,21 @@
+# SolidCraft material library
+newmtl Chassis
+Kd 0.937 0.929 0.886
+newmtl Platter
+Kd 0.125 0.137 0.125
+newmtl Dial
+Kd 0.243 0.267 0.259
+newmtl CollarA
+Kd 1.000 0.420 0.259
+newmtl CollarB
+Kd 1.000 0.420 0.259
+newmtl CollarC
+Kd 1.000 0.420 0.259
+newmtl CollarD
+Kd 1.000 0.420 0.259
+newmtl LabelPlate
+Kd 0.957 0.953 0.298
+newmtl IndexPin
+Kd 0.957 0.953 0.298
+newmtl StatusLens
+Kd 0.725 0.925 0.941
