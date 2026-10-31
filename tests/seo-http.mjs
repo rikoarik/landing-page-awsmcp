@@ -19,7 +19,7 @@ for (const locale of ['en', 'id']) {
   const head = html.split('</head>')[0];
   assert.ok(head.includes('name="google-site-verification" content="SkWS9P140S5JIylgkVzrSNzP3s4OgZo-XN8DSd0OZAY"'));
   assert.equal(await page.locator('html').getAttribute('lang'), locale);
-  assert.ok((await page.locator('h1').textContent()).includes(locale === 'en' ? 'Good code.' : 'Kode rapi.'));
+  assert.ok((await page.locator('h1').textContent()).includes(locale === 'en' ? 'Make only' : 'Buat hanya'));
   assert.equal(await page.title(), seoCopy[locale].title);
   assert.equal(await page.locator('head meta[name="description"]').getAttribute('content'), seoCopy[locale].description);
   assert.equal(new URL(await page.locator('head link[rel="canonical"]').getAttribute('href')).href, `${site.origin}${path}`);
@@ -29,7 +29,7 @@ for (const locale of ['en', 'id']) {
   assert.equal(await page.locator('head meta[property="og:image:width"]').getAttribute('content'), '1200');
   assert.equal(await page.locator('head meta[property="og:image:height"]').getAttribute('content'), '630');
   assert.equal(await page.locator('head meta[name="twitter:card"]').getAttribute('content'), 'summary_large_image');
-  assert.equal(await page.locator('head meta[name="theme-color"]').getAttribute('content'), '#F4F34C');
+  assert.equal(await page.locator('head meta[name="theme-color"]').getAttribute('content'), '#F2EFE6');
   assert.equal(await page.locator('head meta[name="msvalidate.01"]').count(), 0);
   assert.equal(await page.locator('head link[rel="ard"]').getAttribute('href'), `${site.origin}/.well-known/ard.json`);
   assert.equal(await page.locator('form').count(), 0); // WebMCP form coverage is not applicable.
@@ -94,7 +94,13 @@ assert.ok(text.includes('not a requirement for indexing'));
 assert.match(text, /^# AWSM\n\n> /);
 assert.ok(text.length >= 50);
 assert.match(text, /\[[^\]]+\]\(https:\/\/[^)]+\)/);
-for (const section of text.split(/^## /m).slice(1)) assert.match(section, /^.+\n- \[/);
+for (const section of text.split(/^## /m).slice(1)) {
+  const lines = section.split('\n').filter((line) => line.trim());
+  assert.ok(lines.length > 1, `llms section ${lines[0]} needs a body`);
+  assert.ok(lines.some((line) => line.startsWith('- ') || line === '```bash'), `llms section ${lines[0]} needs a list or command`);
+}
+assert.ok(text.includes('## Routes'));
+for (const route of ['MODEL', 'DRAFT', 'RECONSTRUCT', 'PRESENT']) assert.ok(text.includes(route), route);
 const ardResponse = await fetch(`${base}/.well-known/ard.json`);
 assert.equal(ardResponse.status, 200);
 assert.match(ardResponse.headers.get('content-type'), /application\/json/);
@@ -102,7 +108,7 @@ const ard = await ardResponse.json();
 assert.equal(ard.entries.length, 1);
 assert.equal(ard.entries[0].identifier, 'urn:air:useawsm.web.id:skill:awsm-design');
 assert.equal(ard.entries[0].type, 'application/agent-skills+md');
-assert.equal(ard.entries[0].representativeQueries.length, 4);
+assert.equal(ard.entries[0].representativeQueries.length, 5);
 assert.ok(!('data' in ard.entries[0]));
 assert.ok(!('trustManifest' in ard.entries[0]));
 const missing = await page.goto(`${base}/this-page-does-not-exist`);

@@ -14,17 +14,14 @@ try {
       await page.setViewportSize({ width, height: 1000 });
       await page.goto(`${base}${locale === 'id' ? '/id' : '/'}`);
       await page.addScriptTag({ path: require.resolve('axe-core/axe.min.js') });
-      for (let tab = 0; tab < 5; tab++) {
-        await page.locator(`#tool-tab-${tab}`).click();
-        await page.locator(`[data-tool-panel="${tab}"]`).waitFor();
-        const audit = await page.evaluate(async () => {
-          const rules = window.axe.getRules().filter(rule => rule.ruleId.startsWith('aria-')).map(rule => rule.ruleId);
-          const { violations, incomplete } = await window.axe.run(document, { runOnly: { type: 'rule', values: rules } });
-          const summarize = items => items.map(({ id, nodes }) => ({ id, nodes: nodes.map(({ target, failureSummary }) => ({ target, failureSummary })) }));
-          return { violations: summarize(violations), incomplete: summarize(incomplete) };
-        });
-        results.push({ locale, width, tab, ...audit });
-      }
+      // One pass over the whole page: every section is in the DOM at once.
+      const audit = await page.evaluate(async () => {
+        const rules = window.axe.getRules().filter(rule => rule.ruleId.startsWith('aria-')).map(rule => rule.ruleId);
+        const { violations, incomplete } = await window.axe.run(document, { runOnly: { type: 'rule', values: rules } });
+        const summarize = items => items.map(({ id, nodes }) => ({ id, nodes: nodes.map(({ target, failureSummary }) => ({ target, failureSummary })) }));
+        return { violations: summarize(violations), incomplete: summarize(incomplete) };
+      });
+      results.push({ locale, width, ...audit });
       if (width === 375) {
         await page.locator('.menu-toggle').click();
         await page.locator('#mobile-menu').waitFor();
@@ -39,7 +36,7 @@ try {
   const violations = results.filter(result => result.violations.length);
   assert.deepEqual(violations, [], 'ARIA violations; see qa/accessibility-aria-results.json');
   assert.deepEqual(results.filter(result => result.incomplete?.length), [], 'ARIA checks requiring manual review; see qa/accessibility-aria-results.json');
-  console.log('PASS: axe-core ARIA checks, EN/ID, desktop/mobile, all five panels and expanded menus. Not a full WCAG audit.');
+  console.log('PASS: axe-core ARIA checks, EN/ID, desktop/mobile, page and expanded menu. Not a full WCAG audit.');
 } finally {
   await browser.close();
 }

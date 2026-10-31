@@ -1,62 +1,66 @@
-// Deterministic local browser rendering supports the project's existing WOFF2 fonts
-// and the SolidCraft model render that ships with the site. No remote resources,
-// stock imagery, AI images or runtime generation.
+// Deterministic local browser rendering for the social card. Uses the site's own
+// WOFF2 fonts and the SolidCraft render that ships with the site. No remote
+// resources, stock imagery, AI images or runtime generation.
 import { chromium } from 'playwright';
 import { readFile, mkdir } from 'node:fs/promises';
 
-const display = (await readFile(new URL('../app/fonts/Montserrat.woff2', import.meta.url))).toString('base64');
-const body = (await readFile(new URL('../app/fonts/SourceSans3.woff2', import.meta.url))).toString('base64');
-const render = (await readFile(new URL('../public/assets/3d/awsm-router/poster.webp', import.meta.url))).toString('base64');
+const archivo = (await readFile(new URL('../app/fonts/archivo-latin.woff2', import.meta.url))).toString('base64');
+const mono = (await readFile(new URL('../app/fonts/plexmono-latin-400.woff2', import.meta.url))).toString('base64');
+const render = (await readFile(new URL('../public/assets/v2/router-hero.webp', import.meta.url))).toString('base64');
 
 await mkdir(new URL('../public/social/', import.meta.url), { recursive: true });
 const browser = await chromium.launch();
 const page = await browser.newPage({ viewport: { width: 1200, height: 630 }, deviceScaleFactor: 1 });
 
 const style = `
-@font-face{font-family:Display;src:url(data:font/woff2;base64,${display});font-weight:100 900}
-@font-face{font-family:Body;src:url(data:font/woff2;base64,${body});font-weight:200 900}
+@font-face{font-family:Display;src:url(data:font/woff2;base64,${archivo});font-weight:100 900;font-stretch:62% 125%}
+@font-face{font-family:Mono;src:url(data:font/woff2;base64,${mono});font-weight:400}
 *{box-sizing:border-box}
-body{margin:0;background:#F4F34C;color:#202320;width:1200px;height:630px;padding:40px 52px;font-family:Body;display:grid;grid-template-rows:auto 1fr auto;overflow:hidden}
-header{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:1px solid #202320;padding-bottom:16px}
-.logo{font:900 60px/.9 Display;letter-spacing:-5px}
-.url{font-size:20px}
-main{display:grid;grid-template-columns:1fr 400px;gap:28px;align-items:center;padding:22px 0}
-h1{font:800 48px/1.1 Display;letter-spacing:-1.9px;margin:0;max-width:650px}
+body{margin:0;background:#F2EFE6;color:#131311;width:1200px;height:630px;font-family:Display;display:grid;grid-template-columns:1fr 470px;overflow:hidden}
+.copy{padding:44px 0 40px 52px;display:flex;flex-direction:column}
+header{display:flex;align-items:center;gap:9px;margin-bottom:34px}
+.sq{width:8px;height:8px;background:#FF4B1F}
+.logo{font:900 26px/1 Display;font-variation-settings:'wdth' 70,'wght' 900;letter-spacing:-0.02em}
+.kicker{font:400 10px/1 Mono;letter-spacing:.13em;text-transform:uppercase;color:#4A463D;margin-bottom:22px}
+h1{margin:0;font:900 96px/.84 Display;font-variation-settings:'wdth' 70,'wght' 900;letter-spacing:-0.04em;word-spacing:.1em}
 h1 span{display:block;white-space:nowrap}
-.tags{display:flex;flex-wrap:wrap;gap:7px;margin-top:22px}
-.tags span{border:1.5px solid #202320;border-radius:20px;padding:5px 13px;font-size:15px;font-weight:600}
-.tags span:first-child{background:#202320;color:#F4F4EC}
-figure{margin:0;position:relative}
-figure{background:#F4F4EC}
-figure img{display:block;width:400px;height:400px;object-fit:contain;padding:6px}
-figure::after{content:'';position:absolute;inset:0;border:1.5px solid #202320}
-footer{display:flex;justify-content:space-between;border-top:1px solid #202320;padding-top:14px;font-size:18px}
-footer b{font-weight:700}
+h1 .accent{color:#FF4B1F}
+.routes{display:flex;gap:0;margin-top:auto;border-top:1px solid #131311;padding-top:14px;font:400 9px/1.4 Mono;letter-spacing:.11em;text-transform:uppercase;color:#3A362E}
+.routes span{flex:1;border-right:1px solid #CDC7B8;padding-right:12px;margin-right:12px}
+.routes span:last-child{border-right:0}
+.routes b{display:block;color:#FF4B1F;font-weight:400;margin-bottom:6px}
+.plate{position:relative;background:#1B1B18;border-left:6px solid #FF4B1F;display:flex;flex-direction:column;justify-content:center}
+.plate img{width:112%;margin-left:-11%;height:auto;filter:drop-shadow(0 24px 30px rgba(0,0,0,.5))}
+.plabel{position:absolute;top:26px;left:26px;font:400 9px/1 Mono;letter-spacing:.12em;color:#BDB7A6;text-transform:uppercase}
+.caption{position:absolute;left:26px;right:26px;bottom:26px}
+.caption b{display:block;font:900 26px/1.03 Display;font-variation-settings:'wdth' 70,'wght' 900;letter-spacing:-0.01em;word-spacing:.1em;color:#F2EFE6;text-transform:uppercase}
+.caption i{display:block;margin-top:8px;font:400 9px/1.5 Mono;letter-spacing:.1em;color:#8E897C;text-transform:uppercase;font-style:normal}
 `;
 
 for (const locale of ['en', 'id']) {
   const en = locale === 'en';
   await page.setContent(`<!doctype html><html lang="${locale}"><head><style>${style}</style></head><body>
-<header><span class="logo">awsm</span><span class="url">useawsm.web.id</span></header>
-<main>
-  <div>
-    <h1>${en
-      ? '<span>One local MCP toolkit.</span><span>Design context, real 3D,</span><span>rendered evidence.</span>'
-      : '<span>Satu toolkit MCP lokal.</span><span>Konteks desain, 3D nyata,</span><span>bukti hasil render.</span>'}</h1>
-    <div class="tags">
-      <span>24 ${en ? 'typed tools' : 'tool bertipe'}</span>
-      <span>SolidCraft 3D</span>
-      <span>FigCraft</span>
-      <span>QA</span>
-    </div>
+<div class="copy">
+  <header><span class="sq"></span><span class="logo">AWSM</span></header>
+  <p class="kicker">${en ? 'AWSM / LOCAL MCP FOR CODING AGENTS' : 'AWSM / MCP LOKAL UNTUK CODING AGENT'}</p>
+  <h1>${en
+    ? '<span>Make only</span><span>what you</span><span class="accent">meant.</span>'
+    : '<span>Buat hanya</span><span>yang kamu</span><span class="accent">maksud.</span>'}</h1>
+  <div class="routes">
+    <span><b>01</b>${en ? 'Model' : 'Model'}</span>
+    <span><b>02</b>${en ? 'Draft' : 'Gambar'}</span>
+    <span><b>03</b>${en ? 'Reconstruct' : 'Rekonstruksi'}</span>
+    <span><b>04</b>${en ? 'Present' : 'Presentasi'}</span>
   </div>
-  <figure><img src="data:image/webp;base64,${render}" alt=""></figure>
-</main>
-<footer><span><b>AWSM Router</b> — ${en ? 'parametric SolidCraft model' : 'model parametrik SolidCraft'}</span><span>${en ? 'Open source · MIT' : 'Open source · MIT'}</span></footer>
+</div>
+<div class="plate">
+  <span class="plabel">${en ? 'PLATE 00 / INTENT ROUTER' : 'PLATE 00 / INTENT ROUTER'}</span>
+  <img src="data:image/webp;base64,${render}" alt="">
+  <div class="caption"><b>The Intent Router</b><i>${en ? '124 × 88.8 × 38 mm / 4 ports / 1 dial' : '124 × 88,8 × 38 mm / 4 port / 1 dial'}</i></div>
+</div>
 </body></html>`);
   await page.evaluate(() => document.fonts.ready);
-  await page.screenshot({ path: new URL(`../public/social/awsm-${locale}.png`, import.meta.url).pathname, animations: 'disabled' });
+  await page.screenshot({ path: new URL(`../public/social/awsm-${locale}.png`, import.meta.url).pathname });
+  console.log(`wrote public/social/awsm-${locale}.png`);
 }
-
 await browser.close();
-console.log('Generated two local branded 1200×630 PNGs with the published 3D render.');

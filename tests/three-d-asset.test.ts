@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import { execFileSync } from 'node:child_process';
 
 /**
  * Guards the published 3D asset: the landing page claims specific numbers about the
@@ -50,11 +51,11 @@ test('the published GLB is a valid, single-scene glTF with 10 material primitive
   assert.ok(buffer.byteLength < 1.5 * 1024 * 1024, `GLB is ${(buffer.byteLength / 1024).toFixed(0)} KiB`);
 });
 
-test('the GLB mesh matches the numbers the page advertises', async () => {
+test('the GLB mesh matches the numbers the page now prints', async () => {
   const { json } = await readGlb(path.join(ASSET, 'model.glb'));
   const meta = JSON.parse(await fs.readFile(path.join(ASSET, 'model.json'), 'utf8'));
   const { seoCopy } = await import('../lib/seo-content.ts');
-  const { content } = await import('../lib/content.ts');
+  const { v2 } = await import('../lib/content-v2.ts');
 
   interface Accessor { type: string; count: number }
   const accessors = json.accessors as Accessor[];
@@ -65,15 +66,35 @@ test('the GLB mesh matches the numbers the page advertises', async () => {
   assert.equal(meta.mesh.triangles, 25186);
   assert.equal(meta.mesh.materials, json.materials.length);
 
+  // The V2 page states the envelope, bore pitch and dial size. Those were
+  // re-measured from this OBJ because the design frame carried different
+  // values (86 mm depth, Ø 42 mm dial, 12 mm pitch) than the model has.
+  const output = execFileSync('python3', ['-c', `
+import json
+mn=[9e9]*3; mx=[-9e9]*3
+for line in open('${ASSET}/model.obj'):
+    if line.startswith('v '):
+        p=[float(x) for x in line.split()[1:4]]
+        for i in range(3):
+            mn[i]=min(mn[i],p[i]); mx[i]=max(mx[i],p[i])
+print(json.dumps([round(mx[i]-mn[i],2) for i in range(3)]))
+`], { encoding: 'utf8' });
+  const [width, depth, height] = JSON.parse(output) as [number, number, number];
+  assert.equal(width, 124);
+  assert.equal(height, 38);
+
   for (const locale of ['en', 'id'] as const) {
-    const copy = content[locale];
-    const specs = copy.routerSpecs.map(([, value]) => value).join(' ');
-    assert.ok(/25[.,]186/.test(specs), `${locale} specs must state the real triangle count`);
-    assert.ok(/364[.,]6/.test(specs), `${locale} specs must state the measured mass`);
-    assert.ok(/39/.test(specs), `${locale} specs must state the feature count`);
-    assert.ok(copy.pipelineNumbers.some(([, value]) => /25[.,]186/.test(value)));
-    assert.ok(copy.pipelineNumbers.some(([, value]) => /718/.test(value)), 'GLB size claim');
+    const specs = v2[locale].solo.specs.map(([, value]) => value).join(' ');
+    const decimal = locale === 'en' ? '.' : ',';
+    assert.ok(specs.includes(`124 × 88${decimal}8 × 38`), `${locale} envelope must match the mesh`);
+    assert.ok(/(24 MM PITCH|PITCH 24 MM)/.test(specs), `${locale} bore pitch must match the mesh`);
+    assert.ok(/70[.,]9/.test(specs), `${locale} dial diameter must match the mesh`);
+    // The frame's unverified figures must not survive into the page.
+    assert.ok(!/86 × 24|Ø 42|4 DETENT/i.test(specs), `${locale} must not repeat the unverified frame numbers`);
+    const heroSpec = v2[locale].hero.spec + ' ' + v2[locale].hero.dialNote;
+    assert.ok(!/86 × 24|Ø 42|4 DETENT/i.test(heroSpec));
   }
+  assert.ok(depth > 80 && depth < 95, `depth ${depth}`);
   assert.ok(seoCopy.en.facts.some(([, value]) => value.includes('24 typed tools')));
 });
 

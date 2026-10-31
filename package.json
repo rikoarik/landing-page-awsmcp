@@ -15,7 +15,8 @@
     "generate:social": "node scripts/generate-social.mjs",
     "build:3d": "node scripts/build-3d.mjs",
     "verify:3d": "node scripts/render-3d.mjs",
-    "figcraft": "node scripts/figcraft-mcp.mjs"
+    "figcraft": "node scripts/figcraft-mcp.mjs",
+    "export:design": "node scripts/export-design-assets.mjs"
   },
   "dependencies": {
     "framer-motion": "^14.9.0",

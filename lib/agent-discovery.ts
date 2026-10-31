@@ -8,13 +8,14 @@ export function ardManifest() {
     displayName: 'AWSM awsm-design skill guide',
     type: 'application/agent-skills+md',
     url: 'https://raw.githubusercontent.com/rikoarik/artcraft-mcp-awsm/main/skills/awsm-design/SKILL.md',
-    description: 'The default AWSM skill guide for interface design, responsive implementation, asset discovery, SolidCraft parametric 3D, FigCraft-to-code handoff and visual QA. Markdown instructions for a coding agent using locally installed tools; not a hosted execution endpoint.',
+    description: 'The default AWSM skill guide for interface design, responsive implementation, asset discovery, SolidCraft parametric 3D, CADCraft measured drafting, FigCraft-to-code handoff and visual QA. Markdown instructions for a coding agent using locally installed tools; not a hosted execution endpoint.',
     representativeQueries: [
       'How can my coding agent use AWSM to design a responsive interface?',
       'Where is the default awsm-design skill guide?',
       'How do I model a 3D asset in SolidCraft and publish it with AWSM?',
+      'How do I turn a measured drawing into a 3D model with CADCraft and SolidCraft?',
       'How do I prepare FigCraft-to-code handoff and browser QA with AWSM?',
     ],
-    capabilities: ['ui-design-guidance', 'solidcraft-3d-guidance', 'figcraft-handoff-guidance', 'visual-qa-guidance'],
+    capabilities: ['ui-design-guidance', 'solidcraft-3d-guidance', 'cadcraft-drafting-guidance', 'figcraft-handoff-guidance', 'visual-qa-guidance'],
   }] };
 }

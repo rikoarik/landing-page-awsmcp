@@ -1,61 +1,61 @@
 'use client';
 
-import { useEffect, type RefObject } from 'react';
-import gsap from 'gsap';
-import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { useEffect } from 'react';
 import Lenis from 'lenis';
 
-export function MotionSystem({ root }: { root: RefObject<HTMLDivElement | null> }) {
+/**
+ * Two restrained behaviours, both optional:
+ * - smooth scrolling on fine pointers, torn down the moment the user asks for
+ *   reduced motion (the media query listener is live, not sampled once);
+ * - a single fade-up when a section header first enters the viewport.
+ * No pinning, no scrubbed transforms, no motion that survives reduced-motion.
+ */
+export function MotionSystem() {
   useEffect(() => {
-    gsap.registerPlugin(ScrollTrigger);
-    const media = gsap.matchMedia();
-    media.add('(prefers-reduced-motion: no-preference)', () => {
-      const lenis = new Lenis({ autoRaf: false, anchors: true, duration: 0.85, smoothWheel: true });
-      const update = () => ScrollTrigger.update();
-      const tick = (time: number) => lenis.raf(time * 1000);
-      lenis.on('scroll', update);
-      gsap.ticker.add(tick);
-      gsap.ticker.lagSmoothing(0);
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
+    let lenis: Lenis | null = null;
 
-      gsap.from('.circuit-item', { y: 18, duration: 0.8, stagger: 0.1, ease: 'power3.out', clearProps: 'translate' });
-      root.current?.querySelectorAll<SVGPathElement>('.cable').forEach((path) => {
-        const length = path.getTotalLength();
-        gsap.fromTo(path, { strokeDasharray: length, strokeDashoffset: length }, { strokeDashoffset: 0, duration: 1.15, ease: 'power2.inOut', clearProps: 'strokeDasharray,strokeDashoffset' });
-      });
-      const ports = root.current?.querySelectorAll('.stage-port');
-      if (ports) ScrollTrigger.create({ trigger: '.signal-path', start: 'top 85%', end: 'bottom 40%', onUpdate: ({ progress }) => {
-        ports.forEach((port, index) => port.classList.toggle('is-lit', index <= Math.floor(progress * ports.length)));
-      }});
-      return () => {
-        lenis.off('scroll', update);
-        gsap.ticker.remove(tick);
-        lenis.destroy();
-        ports?.forEach(port => port.classList.remove('is-lit'));
-      };
-    }, root);
-    media.add('(min-width: 900px) and (prefers-reduced-motion: no-preference)', () => {
-      gsap.to('.hub-assembly', { y: -14, ease: 'none', scrollTrigger: { trigger: '.hero', start: 'top top', end: 'bottom top', scrub: 1 } });
-      gsap.to('.plane-layer', { x: 26, y: 20, rotate: -2, ease: 'none', scrollTrigger: { trigger: '.handoff-art', start: 'top 85%', end: 'bottom 30%', scrub: 1 } });
-      gsap.to('.plane-code', { x: 12, rotate: 0, ease: 'none', scrollTrigger: { trigger: '.handoff-art', start: 'top 85%', end: 'bottom 30%', scrub: 1 } });
-      gsap.to('.plane-browser', { x: -22, y: -18, rotate: -3, ease: 'none', scrollTrigger: { trigger: '.handoff-art', start: 'top 85%', end: 'bottom 30%', scrub: 1 } });
-    }, root);
-    let active = true;
-    let frame = 0;
-    const refresh = () => { if (active) ScrollTrigger.refresh(); };
-    const observer = new ResizeObserver(() => {
-      cancelAnimationFrame(frame);
-      frame = requestAnimationFrame(refresh);
-    });
-    if (root.current) observer.observe(root.current);
-    document.fonts.ready.then(refresh);
-    window.addEventListener('load', refresh);
-    return () => {
-      active = false;
-      observer.disconnect();
-      cancelAnimationFrame(frame);
-      window.removeEventListener('load', refresh);
-      media.revert();
+    const start = () => {
+      if (lenis) return;
+      lenis = new Lenis({ autoRaf: true, anchors: true, duration: 0.8, smoothWheel: true });
     };
-  }, [root]);
+    const stop = () => {
+      lenis?.destroy();
+      lenis = null;
+    };
+    const sync = () => (reduced.matches ? stop() : start());
+
+    sync();
+    reduced.addEventListener('change', sync);
+
+    const targets = Array.from(
+      document.querySelectorAll<HTMLElement>('.section-head, .plan-grid, .solo-grid, .wiring, .terminal, .core'),
+    );
+    let observer: IntersectionObserver | null = null;
+    if (!reduced.matches && 'IntersectionObserver' in window) {
+      observer = new IntersectionObserver(
+        (entries) => {
+          for (const entry of entries) {
+            if (!entry.isIntersecting) continue;
+            entry.target.classList.add('is-in');
+            observer?.unobserve(entry.target);
+          }
+        },
+        { rootMargin: '0px 0px -8% 0px', threshold: 0.05 },
+      );
+      for (const target of targets) {
+        target.classList.add('reveal');
+        observer.observe(target);
+      }
+    }
+
+    return () => {
+      reduced.removeEventListener('change', sync);
+      observer?.disconnect();
+      for (const target of targets) target.classList.remove('reveal', 'is-in');
+      stop();
+    };
+  }, []);
+
   return null;
 }

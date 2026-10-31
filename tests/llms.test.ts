@@ -13,7 +13,15 @@ test('llms discovery has a complete unique 24-tool inventory and Markdown source
   const text = llmsText();
   assert.match(text, /^# AWSM\n\n> /);
   for (const name of names) assert.ok(text.includes(`\`${name}\``), name);
-  for (const section of text.split(/^## /m).slice(1)) assert.match(section, /^.+\n- \[/);
+  // Every "## " section carries a heading and at least one list entry, so the
+  // file stays machine-parseable for an inference client.
+  for (const section of text.split(/^## /m).slice(1)) {
+    const lines = section.split('\n').filter((line) => line.trim());
+    assert.ok(lines.length > 1, `section ${lines[0]} needs a body`);
+    assert.ok(lines.some((line) => line.startsWith('- ') || line === '```bash'), `section ${lines[0]} needs a list or command`);
+  }
+  const routes = text.split('## Routes')[1].split('## ')[0];
+  for (const route of ['MODEL → SolidCraft', 'DRAFT → CADCraft', 'RECONSTRUCT → CADCraft + SolidCraft', 'PRESENT → FigCraft']) assert.ok(routes.includes(route), route);
   assert.ok(text.includes(`${PRODUCTION_ORIGIN}/id`));
   assert.ok(text.includes('https://raw.githubusercontent.com/rikoarik/artcraft-mcp-awsm/main/README.md'));
 });

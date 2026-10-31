@@ -1,0 +1,10 @@
+Exported from the FigCraft design document "AWSM — The creative circuit",
+page 02 / frame "V2 / Desktop — 1440", through the app's export tool at 2×.
+The .png files are the untouched export; the .webp files are converted with sharp.
+Regenerate with: node scripts/export-design-assets.mjs
+
+router-hero.png  ←  layer "Hero / router render"
+router-body.png  ←  layer "S03 / router"
+macro-dial.png  ←  layer "S03 / macro"
+plan-render.png  ←  layer "S04 / building render"
+figcraft-window.png  ←  layer "S07 / figcraft window"
